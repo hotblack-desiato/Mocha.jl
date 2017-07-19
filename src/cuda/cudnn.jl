@@ -117,7 +117,7 @@ end
 function set_tensor4d_descriptor{T<:AbstractFloat}(desc::Tensor4dDescriptor, dtype::Type{T}, dims :: NTuple{4, Int})
   w,h,c,n = dims
   @cudnncall(:cudnnSetTensor4dDescriptor, (Tensor4dDescriptor, Cint, Cint, Cint, Cint, Cint, Cint),
-             desc, CUDNN_TENSOR_NCHW, cudnn_data_type(dtype), n, c, h, w)
+             desc, CUDNN_TENSOR_NHWC, cudnn_data_type(dtype), n, h, w, c)
 end
 
 function set_tensor4d_descriptor{T<:AbstractFloat}(desc::Tensor4dDescriptor, dtype::Type{T},
@@ -197,8 +197,8 @@ function create_filter_descriptor()
 end
 function set_filter_descriptor{T<:AbstractFloat}(desc::FilterDescriptor, dtype::Type{T}, dims :: NTuple{4, Int})
   w,h,c,k = dims
-  @cudnncall(:cudnnSetFilter4dDescriptor, (FilterDescriptor, Cint, Cint, Cint, Cint, Cint),
-             desc, cudnn_data_type(dtype), k, c, h, w)
+  @cudnncall(:cudnnSetFilter4dDescriptor, (FilterDescriptor, Cint, Cint, Cint, Cint, Cint, Cint),
+             desc, cudnn_data_type(dtype), CUDNN_TENSOR_NHWC, k, h, w, c)
            end
 function create_filter_descriptor(dtype::Type, dims :: NTuple{4, Int})
   desc = create_filter_descriptor()
@@ -229,10 +229,9 @@ function set_convolution_descriptor(desc::ConvolutionDescriptor, input_desc::Ten
   pad_w, pad_h = pad
   v, u = stride
   upscalex, upscaley = upscale
-
   @cudnncall(:cudnnSetConvolution2dDescriptor, (ConvolutionDescriptor, Cint, Cint, Cint, Cint,
-                                              Cint, Cint, Cint),
-             desc, pad_h, pad_w, u, v, upscalex, upscaley, conv_mode)
+                                              Cint, Cint, Cint, Cint),
+             desc, pad_h, pad_w, u, v, upscalex, upscaley, conv_mode, Cint[0][1])
 end
 
 function create_convolution_descriptor(input_desc::Tensor4dDescriptor,
